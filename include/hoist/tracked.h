@@ -21,38 +21,6 @@
 #ifndef HOIST__TRACKED_H
 #define HOIST__TRACKED_H
 
-//  Usage is simple:
-//
-//    [line 11] tracked< int > trackMe (0, HERE); // last assign line #11
-//    [line 12] trackMe.hopefullyEqualTo(0, HERE); // yup, it's 0, no message
-//    [line 13] trackMe.hopefullyEqualTo(1, HERE); // nope, indicates line 11...
-//    [line 13] trackMe.assign(1, HERE); // resets last assignment to line 13
-//    [line 14] trackMe.ensure(1, HERE); // no need to change, already 1...
-//    [line 15] trackMe.hopefullyNotEqualTo(1, HERE); // indicates line #13
-//
-// This is most useful when you have some very formal requirements on how
-// variables are changing.  To improve the quality of the debug message,
-// make sure there is a string output operator for your type, e.g.
-//
-//	class Foo {
-//	private:
-//		int x;
-//	friend QTextStream& operator<< (QTextStream& o, const Foo& foo);
-//	};
-//
-//	inline QTextStream& operator<< (QTextStream& o, const Foo& foo) {
-//		o << "Foo(" << foo.x << ")";
-//		return o;
-//	}
-//
-
-// NOTE: One potential application of tracked is to build a lightweight state machine.
-// 	However, to really nail an architecture that only has certain legal
-// 	transitions and operations between various states, consider using something
-// 	like Qt's state machine framework:
-//
-//		http://doc.trolltech.com/solutions/4/qtanimationframework/statemachine-api.html
-
 #include "codeplace.h"
 #include "hopefully.h"
 
