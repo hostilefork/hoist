@@ -108,7 +108,7 @@ public:
 	bool hopefullyInSet(const TrackType& v1, const TrackType& v2, const TrackType& v3, const codeplace& cp) const
 	{
 		const TrackType* goodValues[3] = {&v1, &v2, &v3};
-		return hopefullyInSetCore(static_cast<const TrackType**>(goodValues), 2, cp);
+		return hopefullyInSetCore(static_cast<const TrackType**>(goodValues), 3, cp);
 	}
 	bool hopefullyInSet(const TrackType& v1, const TrackType& v2, const codeplace& cp) const
 	{

@@ -61,6 +61,19 @@ public:
 			return result;
 		}
 
+		const ValueType lookupValue(const KeyType& key, const ValueType& defaultValue)
+		{
+			mapLock.lockForRead();
+			typename QMap< KeyType, tracked< ValueType > >::const_iterator i (resultCache.find(key));
+			if (i == resultCache.end()) {
+				mapLock.unlock();
+				return defaultValue;
+			}
+			ValueType result (i.value().get());
+			mapLock.unlock();
+			return result;
+		}
+
 		tracked< ValueType > lookupHopefully(const KeyType& key, const codeplace& cp) const
 		{
 			mapLock.lockForRead();
