@@ -51,8 +51,8 @@ public:
 		// string literals that you're already paying for in the compiler's constant pool.
 		// The only time it actually uses QStrings is if you pass in a UUID or filename
 		// string that needs to have its own memory management.
-		FilenameIsCString = 0x4,
-		UuidIsCString = 0x8
+		FilenameIsQString = 0x4,
+		UuidIsQString = 0x8
 
 		// Note that as a general rule... if you enable string pooling a.k.a.
 		// string interning you can save memory, e.g. when 100 asserts in the
@@ -142,76 +142,120 @@ public:
 
 private:
 	Options options;
-	QString filenameQString; // can't union a QString type, meh.
-	const char* filenameCString;
+	union {
+		QString* filenameQString; // dynamically allocated, we are responsible for freeing
+		const char* filenameCString; // must be in constant pool, assumed valid forever
+		void* filenameEither; // use this to copy or set null
+	};
 	long line; // boost::assert used long, I'm just following their lead
-	QString uuidQString; // once again, can't union a QString
-	const char* uuidCString;
+	union {
+		QString* uuidQString; // dynamically allocated, we are responsible for freeing
+		const char* uuidCString; // must be in constant pool, assumed valid forever
+		void* uuidEither; // use this to copy or set null
+	};
 
 public:
 	// I do not like this very much but default constructible is needed for several
 	// purposes, including qRegisterMetaType.
 	codeplace () :
 		options (NullCodeplace),
-		filenameQString (),
-		filenameCString (NULL),
+		filenameEither (NULL),
 		line (-1),
-		uuidQString (),
-		uuidCString (NULL)
+		uuidEither (NULL)
 	{
 	}
 
 protected:
 	codeplace (const QString& filename, const long& line, const QString& uuidString) :
-		options (Permanent),
-		filenameQString (filename),
-		filenameCString (NULL),
+		options (Permanent | FilenameIsQString | UuidIsQString),
+		filenameQString (new QString (filename)),
 		line (line),
-		uuidQString (uuidString),
-		uuidCString (NULL)
+		uuidQString (new QString (uuidString))
 	{
 	}
 
 	codeplace (const char* filename, const long& line, const char* uuidString) :
-		options (Permanent | FilenameIsCString | UuidIsCString),
-		filenameQString (),
+		options (Permanent),
 		filenameCString (filename),
 		line (line),
-		uuidQString (),
 		uuidCString (uuidString)
 	{
 	}
 
 	codeplace (const QString& filename, const long& line) :
-		options (Hashed | FilenameIsCString),
-		filenameQString (filename),
-		filenameCString (NULL),
+		options (Hashed | FilenameIsQString),
+		filenameQString (new QString (filename)),
 		line (line),
-		uuidQString (),
-		uuidCString (NULL)
+		uuidEither (NULL)
 	{
 	}
 
 	codeplace (const char* filename, const long& line) :
-		options (Hashed | FilenameIsCString),
-		filenameQString (),
+		options (Hashed),
 		filenameCString (filename),
 		line (line),
-		uuidQString (),
-		uuidCString (NULL)
+		uuidEither (NULL)
 	{
+	}
+
+private:
+	void transitionToNull()
+	{
+		if (options & FilenameIsQString) {
+			delete filenameQString;
+			filenameQString = NULL;
+		}
+
+		if ((options & Permanent) and (options & UuidIsQString)) {
+			delete uuidQString;
+			uuidQString = NULL;
+		}
+	}
+
+	void transitionFromNull(const codeplace& other) 
+	{
+		options = other.options;
+
+		if (other.options & NullCodeplace)
+			return;
+
+		if (other.options & FilenameIsQString) {
+			filenameQString = new QString (*other.filenameQString);
+		} else {
+			filenameCString = other.filenameCString;
+		}
+
+		if (other.options & Permanent) {
+			if (other.options & UuidIsQString) {
+				uuidQString = new QString (*other.uuidQString);
+			} else {
+				uuidCString = other.uuidCString;
+			}
+		}
 	}
 
 public:
 	// copy constructor is public
 	codeplace (const codeplace& other) :
-		options (other.options),
-		filenameQString (other.filenameQString),
-		filenameCString (other.filenameCString),
+		options (NullCodeplace),
+		filenameEither (NULL),
 		line (other.line),
-		uuidQString (other.uuidQString),
-		uuidCString (other.uuidCString)
+		uuidEither (NULL)
 	{
+		transitionFromNull(other);
+	}
+
+	codeplace& operator= (const codeplace& rhs)
+	{
+		// protect against self-assignment
+		if (&rhs != this) {
+			// free any strings we may have responsibility to free
+			transitionToNull();
+
+			// copy and potentially allocate new QStrings
+			transitionFromNull(rhs);
+		}
+		return *this;
 	}
 
 	int operator== (const codeplace& rhs) const
@@ -230,10 +274,10 @@ public:
 
 		// TODO: behind the scenes mutation into using a QString?
 		// would need to be thread safe if so
-		if (options & FilenameIsCString) {
-			return QString(filenameCString);
+		if (options & FilenameIsQString) {
+			return *filenameQString;
 		}
-		return filenameQString;
+		return QString(filenameCString);
 	}
 
 	long getLine() const
@@ -247,18 +291,18 @@ public:
 		assert(options != NullCodeplace);
 
 		if (options & Permanent) {
-			if (options & UuidIsCString) {
-				return UuidFromBase64String(QByteArray(uuidCString));
+			if (options & UuidIsQString) {
+				return UuidFromBase64String((*uuidQString).toAscii());
 			}
-			return UuidFromBase64String(uuidQString.toAscii());
+			return UuidFromBase64String(QByteArray(uuidCString));
 		} else if (options & Hashed) {
 
 			// TODO: Decide what string format will hash best
 			QString filenameAndLine;
-			if (options & FilenameIsCString)
-				filenameAndLine = QString::number(line, 10) + filenameCString;
+			if (options & FilenameIsQString)
+				filenameAndLine = QString::number(line, 10) + *filenameQString;
 			else
-				filenameAndLine = QString::number(line, 10) + filenameQString;
+				filenameAndLine = QString::number(line, 10) + filenameCString;
 			QByteArray bytes (QCryptographicHash::hash(filenameAndLine.toUtf8(), QCryptographicHash::Md4));
 			return UuidFrom128Bits(bytes);
 		} else {
@@ -287,6 +331,7 @@ public:
 
 	virtual ~codeplace()
 	{
+		transitionToNull();
 	}
 };
 
