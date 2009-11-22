@@ -24,6 +24,11 @@ namespace hoist {
 
 void hopefullyNotReached(const QString& message, const codeplace& cp);
 
+inline void hopefullyNotReached(const char* message, const codeplace& cp)
+{
+	hopefullyNotReached(QString (message), cp);
+}
+
 inline void hopefullyNotReached(const codeplace& cp)
 {
 	hopefullyNotReached("Program Integrity Protection Triggered", cp);
@@ -33,6 +38,13 @@ inline bool hopefully(const bool condition, const QString& message, const codepl
 {
 	if (not condition)
 		hopefullyNotReached(message, cp);
+	return condition;
+}
+
+inline bool hopefully(const bool condition, const char* message, const codeplace& cp)
+{
+	if (not condition)
+		hopefullyNotReached(QString (message), cp);
 	return condition;
 }
 
