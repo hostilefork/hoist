@@ -108,7 +108,7 @@ public:
 		key (key)
 	{
 		mgr.mapLock.lockForWrite();
-		hopefullyNot(mgr.resultCache.contains(key), "mapped<> item already exists with key", cp);
+		hopefully(not mgr.resultCache.contains(key), "mapped<> item already exists with key", cp);
 		mgr.resultCache.insert(key, *static_cast< tracked< ValueType >* >(this));
 		mgr.mapLock.unlock();
 	}
