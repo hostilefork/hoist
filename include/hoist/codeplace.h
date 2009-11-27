@@ -65,80 +65,51 @@ public:
         Q_DECLARE_FLAGS(Options, Option)
 
 public:
-	class manager {
-	public:
-		codeplace makeHere(const char* filename, const long& line)
-		{
-			return codeplace (filename, line);
-		}
+	// REVIEW: These functions used to live inside a statically allocated
+	// "manager" object.  At one time this manager allowed one to look
+	// up (at runtime) a codeplace from a UUID, and there were some
+	// other caching tricks.  Over time the global nature of the manager
+	// created problems with shutdown and initialization and the
+	// usage pattern of global const char* instead of QString emerged
+	// as dominant, so the manager has been removed for now.
 
-		codeplace makeHere(const QString& filename, const long& line)
-		{
-			return codeplace (filename, line);
-		}
+	static codeplace makeHere(const char* filename, const long& line)
+	{
+		return codeplace (filename, line);
+	}
 
-		codeplace makePlace(const char*& filename, const long& line, const char*& uuidString)
-		{
-			return codeplace (filename, line, uuidString);
-		}
+	static codeplace makeHere(const QString& filename, const long& line)
+	{
+		return codeplace (filename, line);
+	}
 
-		codeplace makePlace(const QString& filename, const long& line, const QString& uuidString)
-		{
-			return codeplace (filename, line, uuidString);
-		}
+	static codeplace makePlace(const char*& filename, const long& line, const char*& uuidString)
+	{
+		return codeplace (filename, line, uuidString);
+	}
 
-		codeplace makeThere(const QString& filename, const long& line, const codeplace& cp)
-		{
-			QString uuidString (Base64StringFromUuid(cp.getUuid()));
-			return codeplace (filename, line, uuidString);
-		}
+	static codeplace makePlace(const QString& filename, const long& line, const QString& uuidString)
+	{
+		return codeplace (filename, line, uuidString);
+	}
 
-		codeplace makeYonder(const QString& yonderString, const codeplace& cp)
-		{
-			// faster than Md5 and we're not worried about security/attacks
-			// NOTE: Qt hash function is thread-safe
-			QByteArray bytes (QCryptographicHash::hash(yonderString.toUtf8(), QCryptographicHash::Md4));
-			// TODO: Fix this to comply with UUID format rules, random or hashed bits will
-			// contain lies in the bits indicating what protocol the UUID was generated in
-			// accordance with (e.g. a pseudo-UUID)
-			QString uuidString (Base64StringFromUuid(UuidFrom128Bits(bytes)));
-			return codeplace (cp.getFilename(), cp.getLine(), uuidString);
-		}
+	static codeplace makeThere(const QString& filename, const long& line, const codeplace& cp)
+	{
+		QString uuidString (Base64StringFromUuid(cp.getUuid()));
+		return codeplace (filename, line, uuidString);
+	}
 
-		// because codeplace is sometimes used to initialize global variables, the
-		// manager is created implicitly when the first instance is created.  Due to this
-		// pattern, if codeplace ever gets fancier and uses QMutex and other
-		// primitives it must distinguish between the time before the qApp has been
-		// created and after.  At the moment those dependencies are not in use.
-		manager()
-		{
-		}
-
-	private:
-		 bool canHaveThreads()
-		{
-			// we cannot use read write locks/etc. if the QCoreApplication is not initialized
-			// but if it *is* initialized, we must!
-			//
-			// (it should never become initialized while we are in mid-method call because
-			// at the moment of initializing there is only one thread running, and if your
-			// program is properly written it should not become uninitialized in mid-method
-			// call because you shouldn't have threads still running after your QCoreApplication
-			// has been destroyed.)
-			return qApp;
-		}
-	public:
-		static QSharedPointer< manager > instance;
-		static manager& ensureInstance()
-		{
-			if (not instance)
-				instance = QSharedPointer< manager >(new manager ());
-			return *instance;
-		}
-		virtual ~manager()
-		{
-		}
-	};
+	static codeplace makeYonder(const QString& yonderString, const codeplace& cp)
+	{
+		// faster than Md5 and we're not worried about security/attacks
+		// NOTE: Qt hash function is thread-safe
+		QByteArray bytes (QCryptographicHash::hash(yonderString.toUtf8(), QCryptographicHash::Md4));
+		// TODO: Fix this to comply with UUID format rules, random or hashed bits will
+		// contain lies in the bits indicating what protocol the UUID was generated in
+		// accordance with (e.g. a pseudo-UUID)
+		QString uuidString (Base64StringFromUuid(UuidFrom128Bits(bytes)));
+		return codeplace (cp.getFilename(), cp.getLine(), uuidString);
+	}
 
 private:
 	Options options;
@@ -212,7 +183,7 @@ private:
 		}
 	}
 
-	void transitionFromNull(const codeplace& other) 
+	void transitionFromNull(const codeplace& other)
 	{
 		options = other.options;
 
@@ -357,7 +328,7 @@ class CODEPLACE_no_moc_warning : public QObject { Q_OBJECT };
 //
 
 #define HERE \
-	hoist::codeplace::manager::ensureInstance().makeHere(__FILE__, __LINE__)
+	hoist::codeplace::makeHere(__FILE__, __LINE__)
 
 //
 // PLACE() is what you ideally use instead of HERE wherever possible.
@@ -375,7 +346,7 @@ class CODEPLACE_no_moc_warning : public QObject { Q_OBJECT };
 //
 
 #define PLACE(uuidString) \
-	hoist::codeplace::manager::ensureInstance().makePlace(__FILE__, __LINE__, (uuidString))
+	hoist::codeplace::makePlace(__FILE__, __LINE__, (uuidString))
 
 //
 // "THERE" is for cases where you want to talk about a remote source line and
@@ -386,7 +357,7 @@ class CODEPLACE_no_moc_warning : public QObject { Q_OBJECT };
 //
 
 #define THERE(filename, line, cp) \
-	hoist::codeplace::manager::ensureInstance().makeThere((filename), (line), (cp))
+	hoist::codeplace::makeThere((filename), (line), (cp))
 
 //
 // With "YONDER", the supplied string is hashed to produce the uuid, while
@@ -398,6 +369,6 @@ class CODEPLACE_no_moc_warning : public QObject { Q_OBJECT };
 //
 
 #define YONDER(yonderString, cp) \
-	hoist::codeplace::manager::ensureInstance().makeYonder((yonderString), (cp))
+	hoist::codeplace::makeYonder((yonderString), (cp))
 
 #endif

@@ -17,8 +17,6 @@
 
 namespace hoist {
 
-QSharedPointer< codeplace::manager > codeplace::manager::instance;
-
 QByteArray Base64StringFromUuid(const QUuid& uuid)
 {
 	QByteArray buf;
