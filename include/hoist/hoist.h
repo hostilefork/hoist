@@ -20,7 +20,7 @@
 #include "stacked.h"
 #include "listed.h"
 #include "mapped.h"
-#include "hopefully_cast.h"
+#include "cast_hopefully.h"
 #include "chronicle.h"
 
 #endif

@@ -49,13 +49,16 @@ hope_failed_handler setHopeFailedHandlerAndReturnOldHandler(const hope_failed_ha
 // hopefullyNotReached because it expresses the failure as saying "I hope this
 // line of code doesn't run", which keeps the emphasis on what you hope is
 // true rather than what is not true...
-void hopefullyNotReached(const QString& message, const codeplace& cp)
+bool hopefullyNotReached(const QString& message, const codeplace& cp)
 {
 	if (globalHopeFailedHandler) {
 		(*globalHopeFailedHandler)(message, cp);
 	} else {
 		onHopeFailedBasic(message, cp);
 	}
+
+	// always returns false, for consistency with other hopefully(*) boolean-returners
+	return false;
 }
 
 } // end namespace hoist

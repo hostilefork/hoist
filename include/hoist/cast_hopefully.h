@@ -1,5 +1,5 @@
 //
-//  hopefully_cast.h - Variant of "safe" casting systems like boost's
+//  cast_hopefully.h - Variant of "safe" casting systems like boost's
 //      numeric_cast, designed to work with hoist::codeplace.  It
 //      lets you check things like whether casting a negative
 //      integer into an unsigned is throwing away the sign.
@@ -150,45 +150,45 @@ struct do_conv<To, From, true, true, false> {
 };
 
 template<typename To, typename From>
-To hopefully_cast(From f, const codeplace& cp) { return do_conv<To, From>::call(f, cp); }
+To cast_hopefully(From f, const codeplace& cp) { return do_conv<To, From>::call(f, cp); }
 
 // See: http://www.gotw.ca/publications/mill17.htm
 template<typename ToPtr, typename From>
-ToPtr hopefully_cast(From* fp, const codeplace& cp)
+ToPtr cast_hopefully(From* fp, const codeplace& cp)
 {
 	if (not fp)
 		return NULL;
 	ToPtr tp (dynamic_cast< ToPtr >(fp));
-	hopefully(tp, "hopefully_cast failed to dynamically cast between class types", cp);
+	hopefully(tp, "cast_hopefully failed to dynamically cast between class types", cp);
 	return tp;
 }
 
 template<typename ToPtr, typename From>
-ToPtr hopefully_cast(const From* fp, const codeplace& cp)
+ToPtr cast_hopefully(const From* fp, const codeplace& cp)
 {
 	if (not fp)
 		return NULL;
 	ToPtr tp (dynamic_cast< ToPtr >(fp));
-	hopefully(tp, "hopefully_cast failed to dynamically cast between class types", cp);
+	hopefully(tp, "cast_hopefully failed to dynamically cast between class types", cp);
 	return tp;
 }
 
 #if 0
 int main() {
 /* unsigned -> signed, overflow */
-hopefully_cast<short>(UINT_MAX);
+cast_hopefully<short>(UINT_MAX);
 
 /* unsigned -> unsigned, overflow */
-hopefully_cast<unsigned char>(ULONG_MAX);
+cast_hopefully<unsigned char>(ULONG_MAX);
 
 /* signed -> unsigned, overflow */
-hopefully_cast<unsigned long>(-1);
+cast_hopefully<unsigned long>(-1);
 
 /* signed -> signed, overflow */
-hopefully_cast<signed char>(INT_MAX);
+cast_hopefully<signed char>(INT_MAX);
 
 /* always works (no check done) */
-hopefully_cast<long>(INT_MAX);
+cast_hopefully<long>(INT_MAX);
 }
 #endif
 

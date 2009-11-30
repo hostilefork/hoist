@@ -1,6 +1,6 @@
 //
-//  hopefully_cast cpp - Static definitions required by the
-//	hopefully_cast implementation, currently none required
+//  cast_hopefully cpp - Static definitions required by the
+//	cast_hopefully implementation, currently none required
 //	(all the code is implemented in the header...this may
 //	change)
 //
@@ -12,4 +12,4 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#include "hoist/hopefully_cast.h"
+#include "hoist/cast_hopefully.h"
