@@ -25,11 +25,9 @@ void onHopeFailedBasic(const QString& message, const codeplace& cp)
 {
 	qDebug() << message << endl
 		<< "     output from: " << cp.toString() << endl;
-	while (true) {
-		// infinite loop for now to stop the code
-		// but if you have more threads that won't stop them
-		// need a better idea here.
-	}
+
+	// http://refspecs.freestandards.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/baselib---assert-fail-1.html
+	__assert_fail(message.toAscii(), cp.getFilename().toAscii(), cp.getLine(), cp.getUuid().toString().toAscii());
 }
 
 hope_failed_handler setHopeFailedHandlerAndReturnOldHandler(const hope_failed_handler& newHandler)

@@ -171,7 +171,7 @@ public:
 
 public:
 	// Operations for setting the value
-	void assign(const TrackType& newValue, const codeplace& cp)
+	virtual void assign(const TrackType& newValue, const codeplace& cp)
 	{
 		value = newValue;
 		lastAssignLocation = cp;

@@ -118,6 +118,15 @@ public:
 		return key;
 	}
 
+	/* virtual */ void assign(const ValueType& newValue, const codeplace& cp)
+	{
+		mgr.mapLock.lockForWrite();
+		hopefully(1 == mgr.resultCache.remove(key), cp);
+		tracked< ValueType >::assign(newValue, cp);
+		mgr.resultCache.insert(key, *static_cast< tracked< ValueType >* >(this));
+		mgr.mapLock.unlock();
+	}
+
 	virtual ~mapped()
 	{
 		mgr.mapLock.lockForWrite();
