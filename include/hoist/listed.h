@@ -38,15 +38,21 @@ public:
 		Q_DISABLE_COPY(manager)
 
 	public:
-		QReadWriteLock listLock;
-		QList< listed< ListType >* > list;
-		QList< tracked< ListType > > resultCache;
-
-	public:
 		manager()
 		{
 		}
 
+		virtual ~manager()
+		{
+			foreach(listed< ListType >* ptr, list) {
+				// This test should always fail, but reports the
+				// allocation point during the failure
+				ptr->hopefullyNotEqualTo(*ptr, HERE);
+			}
+			hopefully(resultCache.empty(), HERE);
+		}
+
+	public:
 		// due to threading we can't give listed references back because
 		// they might get destroyed by another thread while we're holding
 		// onto them.  also... due to semantics we can't give listed
@@ -61,19 +67,12 @@ public:
 			return result;
 		}
 
-		virtual ~manager()
-		{
-			foreach(listed< ListType >* ptr, list) {
-				// This test should always fail, but reports the
-				// allocation point during the failure
-				ptr->hopefullyNotEqualTo(*ptr, HERE);
-			}
-			hopefully(resultCache.empty(), HERE);
-		}
+	private:
+		QReadWriteLock listLock;
+		QList< listed< ListType >* > list;
+		QList< tracked< ListType > > resultCache;
+		friend class listed;
 	};
-
-private:
-	manager& mgr;
 
 public:
 	listed (const ListType& value, manager& mgr, const codeplace& cp) :
@@ -96,6 +95,8 @@ public:
 		mgr.listLock.unlock();
 	}
 
+private:
+	manager& mgr;
 };
 
 // we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be

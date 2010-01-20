@@ -39,32 +39,6 @@ QUuid UuidFrom128Bits(const QByteArray& bytes);
 class codeplace
 {
 public:
-	enum Option {
-		 // I don't like the fact that we need default constructible for qRegisterMetaType
-		NullCodeplace = 0x0,
-
-		// is either "permanent" or "hashed", can't actually be both
-		Hashed = 0x1,
-		Permanent = 0x2,
-
-		// codeplace is optimized to avoid making a lot of QStrings out of immutable
-		// string literals that you're already paying for in the compiler's constant pool.
-		// The only time it actually uses QStrings is if you pass in a UUID or filename
-		// string that needs to have its own memory management.
-		FilenameIsQString = 0x4,
-		UuidIsQString = 0x8
-
-		// Note that as a general rule... if you enable string pooling a.k.a.
-		// string interning you can save memory, e.g. when 100 asserts in the
-		// same file are all using __FILE__ and thus producing a copy of the literal
-		// "foo.cpp" you only pay for the memory to hold that string one time.
-		//
-		//    http://en.wikipedia.org/wiki/String_interning
-		//    http://msdn.microsoft.com/en-us/library/s0s0asdt(VS.80).aspx
-	};
-        Q_DECLARE_FLAGS(Options, Option)
-
-public:
 	// REVIEW: These functions used to live inside a statically allocated
 	// "manager" object.  At one time this manager allowed one to look
 	// up (at runtime) a codeplace from a UUID, and there were some
@@ -111,20 +85,6 @@ public:
 		return codeplace (cp.getFilename(), cp.getLine(), uuidString);
 	}
 
-private:
-	Options options;
-	union {
-		QString* filenameQString; // dynamically allocated, we are responsible for freeing
-		const char* filenameCString; // must be in constant pool, assumed valid forever
-		void* filenameEither; // use this to copy or set null
-	};
-	long line; // boost::assert used long, I'm just following their lead
-	union {
-		QString* uuidQString; // dynamically allocated, we are responsible for freeing
-		const char* uuidCString; // must be in constant pool, assumed valid forever
-		void* uuidEither; // use this to copy or set null
-	};
-
 public:
 	// I do not like this very much but default constructible is needed for several
 	// purposes, including qRegisterMetaType.
@@ -136,76 +96,6 @@ public:
 	{
 	}
 
-protected:
-	codeplace (const QString& filename, const long& line, const QString& uuidString) :
-		options (Permanent | FilenameIsQString | UuidIsQString),
-		filenameQString (new QString (filename)),
-		line (line),
-		uuidQString (new QString (uuidString))
-	{
-	}
-
-	codeplace (const char* filename, const long& line, const char* uuidString) :
-		options (Permanent),
-		filenameCString (filename),
-		line (line),
-		uuidCString (uuidString)
-	{
-	}
-
-	codeplace (const QString& filename, const long& line) :
-		options (Hashed | FilenameIsQString),
-		filenameQString (new QString (filename)),
-		line (line),
-		uuidEither (NULL)
-	{
-	}
-
-	codeplace (const char* filename, const long& line) :
-		options (Hashed),
-		filenameCString (filename),
-		line (line),
-		uuidEither (NULL)
-	{
-	}
-
-private:
-	void transitionToNull()
-	{
-		if (options & FilenameIsQString) {
-			delete filenameQString;
-			filenameQString = NULL;
-		}
-
-		if ((options & Permanent) and (options & UuidIsQString)) {
-			delete uuidQString;
-			uuidQString = NULL;
-		}
-	}
-
-	void transitionFromNull(const codeplace& other)
-	{
-		options = other.options;
-
-		if (other.options & NullCodeplace)
-			return;
-
-		if (other.options & FilenameIsQString) {
-			filenameQString = new QString (*other.filenameQString);
-		} else {
-			filenameCString = other.filenameCString;
-		}
-
-		if (other.options & Permanent) {
-			if (other.options & UuidIsQString) {
-				uuidQString = new QString (*other.uuidQString);
-			} else {
-				uuidCString = other.uuidCString;
-			}
-		}
-	}
-
-public:
 	// copy constructor is public
 	codeplace (const codeplace& other) :
 		options (NullCodeplace),
@@ -216,6 +106,12 @@ public:
 		transitionFromNull(other);
 	}
 
+	virtual ~codeplace()
+	{
+		transitionToNull();
+	}
+
+public:
 	codeplace& operator= (const codeplace& rhs)
 	{
 		// protect against self-assignment
@@ -300,10 +196,114 @@ public:
 		return (options & Permanent);
 	}
 
-	virtual ~codeplace()
+private:
+	void transitionToNull()
 	{
-		transitionToNull();
+		if (options & FilenameIsQString) {
+			delete filenameQString;
+			filenameQString = NULL;
+		}
+
+		if ((options & Permanent) and (options & UuidIsQString)) {
+			delete uuidQString;
+			uuidQString = NULL;
+		}
 	}
+
+	void transitionFromNull(const codeplace& other)
+	{
+		options = other.options;
+
+		if (other.options & NullCodeplace)
+			return;
+
+		if (other.options & FilenameIsQString) {
+			filenameQString = new QString (*other.filenameQString);
+		} else {
+			filenameCString = other.filenameCString;
+		}
+
+		if (other.options & Permanent) {
+			if (other.options & UuidIsQString) {
+				uuidQString = new QString (*other.uuidQString);
+			} else {
+				uuidCString = other.uuidCString;
+			}
+		}
+	}
+
+public:
+	enum Option {
+		 // I don't like the fact that we need default constructible for qRegisterMetaType
+		NullCodeplace = 0x0,
+
+		// is either "permanent" or "hashed", can't actually be both
+		Hashed = 0x1,
+		Permanent = 0x2,
+
+		// codeplace is optimized to avoid making a lot of QStrings out of immutable
+		// string literals that you're already paying for in the compiler's constant pool.
+		// The only time it actually uses QStrings is if you pass in a UUID or filename
+		// string that needs to have its own memory management.
+		FilenameIsQString = 0x4,
+		UuidIsQString = 0x8
+
+		// Note that as a general rule... if you enable string pooling a.k.a.
+		// string interning you can save memory, e.g. when 100 asserts in the
+		// same file are all using __FILE__ and thus producing a copy of the literal
+		// "foo.cpp" you only pay for the memory to hold that string one time.
+		//
+		//    http://en.wikipedia.org/wiki/String_interning
+		//    http://msdn.microsoft.com/en-us/library/s0s0asdt(VS.80).aspx
+	};
+        Q_DECLARE_FLAGS(Options, Option)
+
+protected:
+	codeplace (const QString& filename, const long& line, const QString& uuidString) :
+		options (Permanent | FilenameIsQString | UuidIsQString),
+		filenameQString (new QString (filename)),
+		line (line),
+		uuidQString (new QString (uuidString))
+	{
+	}
+
+	codeplace (const char* filename, const long& line, const char* uuidString) :
+		options (Permanent),
+		filenameCString (filename),
+		line (line),
+		uuidCString (uuidString)
+	{
+	}
+
+	codeplace (const QString& filename, const long& line) :
+		options (Hashed | FilenameIsQString),
+		filenameQString (new QString (filename)),
+		line (line),
+		uuidEither (NULL)
+	{
+	}
+
+	codeplace (const char* filename, const long& line) :
+		options (Hashed),
+		filenameCString (filename),
+		line (line),
+		uuidEither (NULL)
+	{
+	}
+
+private:
+	Options options;
+	union {
+		QString* filenameQString; // dynamically allocated, we are responsible for freeing
+		const char* filenameCString; // must be in constant pool, assumed valid forever
+		void* filenameEither; // use this to copy or set null
+	};
+	long line; // boost::assert used long, I'm just following their lead
+	union {
+		QString* uuidQString; // dynamically allocated, we are responsible for freeing
+		const char* uuidCString; // must be in constant pool, assumed valid forever
+		void* uuidEither; // use this to copy or set null
+	};
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(codeplace::Options)

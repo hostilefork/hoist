@@ -37,14 +37,18 @@ public:
 		Q_DISABLE_COPY(manager)
 
 	public:
-		mutable QReadWriteLock mapLock;
-		QMap< KeyType, tracked< ValueType > > resultCache;
-
-	public:
 		manager()
 		{
 		}
 
+		virtual ~manager()
+		{
+			foreach(tracked< ValueType > value, resultCache) {
+				value.hopefullyNotEqualTo(value, HERE);
+			}
+		}
+
+	public:
 		// due to threading we can't give mapped references back because
 		// they might get destroyed by another thread while we're holding
 		// onto them.  also... due to semantics we can't give listed
@@ -89,17 +93,11 @@ public:
 			return result;
 		}
 
-		virtual ~manager()
-		{
-			foreach(tracked< ValueType > value, resultCache) {
-				value.hopefullyNotEqualTo(value, HERE);
-			}
-		}
+	private:
+		mutable QReadWriteLock mapLock;
+		QMap< KeyType, tracked< ValueType > > resultCache;
+		friend class mapped;
 	};
-
-private:
-	manager& mgr;
-	KeyType key;
 
 public:
 	mapped (const KeyType& key, const ValueType& value, manager& mgr, const codeplace& cp) :
@@ -113,6 +111,14 @@ public:
 		mgr.mapLock.unlock();
 	}
 
+	virtual ~mapped()
+	{
+		mgr.mapLock.lockForWrite();
+		hopefully(mgr.resultCache.remove(key) == 1, HERE);
+		mgr.mapLock.unlock();
+	}
+
+public:
 	const KeyType& getKey() const
 	{
 		return key;
@@ -127,12 +133,9 @@ public:
 		mgr.mapLock.unlock();
 	}
 
-	virtual ~mapped()
-	{
-		mgr.mapLock.lockForWrite();
-		hopefully(mgr.resultCache.remove(key) == 1, HERE);
-		mgr.mapLock.unlock();
-	}
+private:
+	manager& mgr;
+	KeyType key;
 };
 
 // we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be

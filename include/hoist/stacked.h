@@ -36,11 +36,11 @@ public:
 		Q_DISABLE_COPY(manager)
 
 	public:
-		mutable QReadWriteLock mapLock;
-		QMap< QThread*, QList< tracked< StackType > > > map;
-
-	public:
 		manager()
+		{
+		}
+
+		virtual ~manager()
 		{
 		}
 
@@ -85,13 +85,11 @@ public:
 			return stack;
 		}
 
-		virtual ~manager()
-		{
-		}
+	private:
+		mutable QReadWriteLock mapLock;
+		QMap< QThread*, QList< tracked< StackType > > > map;
+		friend class stacked;
 	};
-
-private:
-	manager& mgr;
 
 public:
 	stacked (StackType value, manager& mgr, const codeplace& cp) :
@@ -125,6 +123,8 @@ public:
 		mgr.mapLock.unlock();
 	}
 
+private:
+	manager& mgr;
 };
 
 // we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be

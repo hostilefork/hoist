@@ -28,11 +28,6 @@ namespace hoist {
 
 template< class TrackType > class tracked
 {
-private:
-	TrackType value;
-	codeplace constructLocation;
-	codeplace lastAssignLocation;
-
 public:
 	tracked (const TrackType& value, const codeplace& cp) :
 		value (value),
@@ -56,6 +51,10 @@ public:
 	{
 	}
 
+	virtual ~tracked()
+		{ }
+
+public:
 	// Basic accessors, the value has a cast operator so it acts like what it's tracking
 	operator const TrackType&() const
 		{ return value; }
@@ -71,35 +70,6 @@ public:
 	codeplace whereLastAssigned() const
 		{ return lastAssignLocation; }
 
-protected:
-	bool hopefullyInSetCore(const TrackType** goodValues, const size_t& numGoodValues, const codeplace& cp) const
-	{
-		hopefully(numGoodValues != 0, HERE);
-
-		for(size_t index = 0; index < numGoodValues; index++) {
-			if (value == *(goodValues[index]))
-				return true;
-		}
-
-		QString message;
-		QTextStream ts (&message);
-		if (numGoodValues == 1) {
-			ts << "Expected value to be " << *(goodValues[0]);
-		} else {
-			ts << "Expected value to be in set [";
-			for(size_t index = 0; index < numGoodValues; index++) {
-				ts << *(goodValues[index]);
-				if (index == numGoodValues - 1)
-					ts << "] ";
-				else
-					ts << ",";
-			}
-		}
-		ts << " and it was " << value << endl;
-		ts <<"Last assignment was at " << lastAssignLocation.toString();
-		hopefullyNotReached(message, cp);
-		return false;
-	}
 public:
 	// Is there a better way to do this that doesn't involve the caller generating some kind
 	// of costly set structure?  Variadic templates, perhaps?
@@ -121,37 +91,6 @@ public:
 		return hopefullyInSetCore(static_cast<const TrackType**>(goodValues), 1, cp);
 	}
 
-protected:
-	bool hopefullyNotInSetCore(const TrackType** badValues, const size_t& numBadValues, const codeplace& cp) const
-	{
-		hopefully(numBadValues != 0, HERE);
-
-		for(size_t index = 0; index < numBadValues; index++) {
-			if (value == *(badValues[index])) {
-
-				QString message;
-				QTextStream ts (&message);
-				if (numBadValues == 1) {
-					ts << "Did not expect value to be " << *(badValues[0]) << endl;
-				} else {
-					ts << "Did not expect value to be in set [";
-					for(size_t index = 0; index < numBadValues; index++) {
-						ts << *(badValues[index]);
-						if (index == numBadValues - 1)
-							ts << "] ";
-						else
-							ts << ",";
-					}
-					ts << " and it was " << value << endl;
-				}
-				ts <<"Last assignment was at " << lastAssignLocation.toString();
-				hopefullyNotReached(message, cp);
-				return false;
-			}
-		}
-
-		return true;
-	}
 public:
 	bool hopefullyNotInSet(const TrackType& v1, const TrackType& v2, const TrackType& v3, const codeplace& cp) const
 	{
@@ -204,9 +143,71 @@ public:
 		return result;
 	}
 
-public:
-	virtual ~tracked()
-		{ }
+protected:
+	bool hopefullyInSetCore(const TrackType** goodValues, const size_t& numGoodValues, const codeplace& cp) const
+	{
+		hopefully(numGoodValues != 0, HERE);
+
+		for(size_t index = 0; index < numGoodValues; index++) {
+			if (value == *(goodValues[index]))
+				return true;
+		}
+
+		QString message;
+		QTextStream ts (&message);
+		if (numGoodValues == 1) {
+			ts << "Expected value to be " << *(goodValues[0]);
+		} else {
+			ts << "Expected value to be in set [";
+			for(size_t index = 0; index < numGoodValues; index++) {
+				ts << *(goodValues[index]);
+				if (index == numGoodValues - 1)
+					ts << "] ";
+				else
+					ts << ",";
+			}
+		}
+		ts << " and it was " << value << endl;
+		ts <<"Last assignment was at " << lastAssignLocation.toString();
+		hopefullyNotReached(message, cp);
+		return false;
+	}
+
+	bool hopefullyNotInSetCore(const TrackType** badValues, const size_t& numBadValues, const codeplace& cp) const
+	{
+		hopefully(numBadValues != 0, HERE);
+
+		for(size_t index = 0; index < numBadValues; index++) {
+			if (value == *(badValues[index])) {
+
+				QString message;
+				QTextStream ts (&message);
+				if (numBadValues == 1) {
+					ts << "Did not expect value to be " << *(badValues[0]) << endl;
+				} else {
+					ts << "Did not expect value to be in set [";
+					for(size_t index = 0; index < numBadValues; index++) {
+						ts << *(badValues[index]);
+						if (index == numBadValues - 1)
+							ts << "] ";
+						else
+							ts << ",";
+					}
+					ts << " and it was " << value << endl;
+				}
+				ts <<"Last assignment was at " << lastAssignLocation.toString();
+				hopefullyNotReached(message, cp);
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+private:
+	TrackType value;
+	codeplace constructLocation;
+	codeplace lastAssignLocation;
 };
 
 // we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be
