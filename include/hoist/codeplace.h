@@ -230,6 +230,8 @@ private:
 				uuidCString = other.uuidCString;
 			}
 		}
+
+		line = other.line;
 	}
 
 public:
@@ -307,10 +309,6 @@ private:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(codeplace::Options)
-
-// we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be
-// so this dummy object suppresses the warning "No relevant classes found" during moc
-class CODEPLACE_no_moc_warning : public QObject { Q_OBJECT };
 
 } // end namespace hoist
 

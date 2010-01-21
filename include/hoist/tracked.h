@@ -210,10 +210,6 @@ private:
 	codeplace lastAssignLocation;
 };
 
-// we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be
-// so this dummy object suppresses the warning "No relevant classes found" during moc
-class TRACKED_no_moc_warning : public QObject { Q_OBJECT };
-
 } // end namespace hoist
 
 #endif

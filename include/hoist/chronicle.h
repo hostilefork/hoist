@@ -37,10 +37,6 @@ inline void setChronicleHandler(const chronicle_handler& newHandler)
 	static_cast< void >(setChronicleHandlerAndReturnOldHandler(newHandler));
 }
 
-// we moc this file.  but currently no Qt objects.  doesn't mean there won't ever be
-// so this dummy object suppresses the warning "No relevant classes found" during moc
-class CHRONICLE_no_moc_warning : public QObject { Q_OBJECT };
-
 } // end namespace hoist
 
 #endif
