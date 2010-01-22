@@ -26,8 +26,22 @@ void onHopeFailedBasic(const QString& message, const codeplace& cp)
 	qDebug() << message << endl
 		<< "     output from: " << cp.toString() << endl;
 
-	// http://refspecs.freestandards.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/baselib---assert-fail-1.html
-	__assert_fail(message.toAscii(), cp.getFilename().toAscii(), cp.getLine(), cp.getUuid().toString().toAscii());
+	qt_assert_x(message.toAscii(), cp.getUuid().toString().toAscii(), cp.getFilename().toAscii(), cp.getLine());
+
+	// hoist encourages "ship what you test" and the hopefully functions do
+	// not disappear in the release build.  Yet they return a value which can
+	// be tested and error handling (if any) run.
+
+	// the nuances of when you are allowed to return false instead of halting the
+	// program here are something I need to write up better in the hoist docs, but
+	// this simple substitute header file doesn't have the tools to make that
+	// discernment (e.g. checking a web database or getting a passcode from
+	// a developer).
+
+	// So if you're in the debugger and want to continue, then skip this
+	// next call using set-next-statement
+
+	qFatal("%s in %s of %s, line %d", message, cp.getUuid().toString().toAscii(), cp.getFilename().toAscii(), cp.getLine());
 }
 
 hope_failed_handler setHopeFailedHandlerAndReturnOldHandler(const hope_failed_handler& newHandler)
