@@ -127,6 +127,10 @@ private:
 	manager& mgr;
 };
 
+// we moc this file, though whether there are any QObjects or not may vary
+// this dummy object suppresses the warning "No relevant classes found" w/moc
+class STACKED_no_moc_warning : public QObject { Q_OBJECT };
+
 } // end namespace hoist
 
 #endif
