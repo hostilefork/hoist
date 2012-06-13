@@ -30,7 +30,7 @@
 
 namespace hoist {
 
-template< class ListType > class listed : public tracked< ListType >
+template<class ListType> class listed : public tracked<ListType>
 {
 public:
 	class manager
@@ -44,7 +44,7 @@ public:
 
 		virtual ~manager()
 		{
-			foreach(listed< ListType >* ptr, list) {
+            foreach(listed<ListType>* ptr, list) {
 				// This test should always fail, but reports the
 				// allocation point during the failure
 				ptr->hopefullyNotEqualTo(*ptr, HERE);
@@ -59,29 +59,29 @@ public:
 		// instances back because then they'd get into the list also.  yet
 		// if they're in a QList, then that's the only thing distinguishing them
 		// from a tracked... so we upcast and copy construct
-		QList< tracked< ListType > > getList()
+        QList< tracked<ListType> > getList()
 		{
 			listLock.lockForRead();
-			QList< tracked< ListType > > result (resultCache);
+            QList< tracked<ListType> > result (resultCache);
 			listLock.unlock();
 			return result;
 		}
 
 	private:
 		QReadWriteLock listLock;
-		QList< listed< ListType >* > list;
-		QList< tracked< ListType > > resultCache;
+        QList< listed<ListType>* > list;
+        QList< tracked<ListType> > resultCache;
 		friend class listed;
 	};
 
 public:
 	listed (const ListType& value, manager& mgr, const codeplace& cp) :
-		tracked< ListType > (value, cp),
+        tracked<ListType> (value, cp),
 		mgr (mgr)
 	{
 		mgr.listLock.lockForWrite();
 		mgr.list.append(this);
-		mgr.resultCache.append(*static_cast< tracked< ListType >* >(this));
+        mgr.resultCache.append(*static_cast< tracked<ListType>* >(this));
 		mgr.listLock.unlock();
 	}
 

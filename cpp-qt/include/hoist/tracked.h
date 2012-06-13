@@ -26,7 +26,7 @@
 
 namespace hoist {
 
-template< class TrackType > class tracked
+template<class TrackType> class tracked
 {
 public:
 	tracked (const TrackType& value, const codeplace& cp) :
@@ -44,7 +44,7 @@ public:
 	// REVIEW: There are some extra bits in codeplace at the moment.
 	// might it be useful to have a "copy constructed" bit to document
 	// this situation?
-	tracked (const tracked< TrackType >& other) :
+    tracked (const tracked<TrackType>& other) :
 		value (other.value),
 		constructLocation (other.constructLocation),
 		lastAssignLocation (other.lastAssignLocation)

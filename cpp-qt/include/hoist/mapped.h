@@ -29,7 +29,7 @@
 
 namespace hoist {
 
-template< class KeyType, class ValueType > class mapped : public tracked< ValueType >
+template<class KeyType, class ValueType> class mapped : public tracked<ValueType>
 {
 public:
 	class manager
@@ -43,7 +43,7 @@ public:
 
 		virtual ~manager()
 		{
-			foreach(tracked< ValueType > value, resultCache) {
+            foreach(tracked<ValueType> value, resultCache) {
 				value.hopefullyNotEqualTo(value, HERE);
 			}
 		}
@@ -57,10 +57,10 @@ public:
 		// from a tracked... so we upcast and copy construct.  This drops
 		// the key but since you have the QMap the key will be available
 		// during any iteration.
-		QMap< KeyType, tracked< ValueType > > getMap() const
+        QMap<KeyType, tracked<ValueType> > getMap() const
 		{
 			mapLock.lockForRead();
-			QMap< KeyType, tracked< ValueType > > result (resultCache);
+            QMap<KeyType, tracked<ValueType> > result (resultCache);
 			mapLock.unlock();
 			return result;
 		}
@@ -68,7 +68,7 @@ public:
 		const ValueType lookupValue(const KeyType& key, const ValueType& defaultValue)
 		{
 			mapLock.lockForRead();
-			typename QMap< KeyType, tracked< ValueType > >::const_iterator i (resultCache.find(key));
+            typename QMap<KeyType, tracked<ValueType> >::const_iterator i (resultCache.find(key));
 			if (i == resultCache.end()) {
 				mapLock.unlock();
 				return defaultValue;
@@ -78,24 +78,24 @@ public:
 			return result;
 		}
 
-		tracked< ValueType > lookupHopefully(const KeyType& key, const codeplace& cp) const
+        tracked<ValueType> lookupHopefully(const KeyType& key, const codeplace& cp) const
 		{
 			mapLock.lockForRead();
-			typename QMap< KeyType, tracked< ValueType > >::const_iterator i (resultCache.find(key));
+            typename QMap<KeyType, tracked<ValueType> >::const_iterator i (resultCache.find(key));
 			if (i == resultCache.end()) {
 				hopefullyNotReached(cp);
 				mapLock.unlock();
 				return i.value(); // this will crash but what else do I return?
 				// TODO: revisit default value semantics, I don't want to force ValueType to be default constructible...
 			}
-			tracked< ValueType > result (i.value());
+            tracked<ValueType> result (i.value());
 			mapLock.unlock();
 			return result;
 		}
 
 	private:
 		mutable QReadWriteLock mapLock;
-		QMap< KeyType, tracked< ValueType > > resultCache;
+        QMap<KeyType, tracked<ValueType> > resultCache;
 		friend class mapped;
 	};
 
