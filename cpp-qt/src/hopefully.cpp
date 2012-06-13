@@ -41,7 +41,7 @@ void onHopeFailedBasic(const QString& message, const codeplace& cp)
 	// So if you're in the debugger and want to continue, then skip this
 	// next call using set-next-statement
 
-	qFatal("%s in %s of %s, line %d", message, cp.getUuid().toString().toAscii(), cp.getFilename().toAscii(), cp.getLine());
+    qFatal("%s in %s of %s, line %ld", message.toLocal8Bit().data(), cp.getUuid().toString().toLocal8Bit().data(), cp.getFilename().toLocal8Bit().data(), cp.getLine());
 }
 
 hope_failed_handler setHopeFailedHandlerAndReturnOldHandler(const hope_failed_handler& newHandler)
