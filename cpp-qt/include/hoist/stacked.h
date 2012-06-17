@@ -49,7 +49,7 @@ public:
 		// stack is empty and then take action on that, you probably
 		// need to capture the entire stack because otherwise it might
 		// change between when you asked and when you make the next call
-		tracked< StackType > getTopHopefully(const codeplace& cp) const
+		tracked<StackType> getTopHopefully(const codeplace& cp) const
 		{
 			QThread* thread (QThread::currentThread());
 			mapLock.lockForRead();

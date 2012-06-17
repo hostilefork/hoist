@@ -158,7 +158,7 @@ ToPtr cast_hopefully(From* fp, const codeplace& cp)
 {
 	if (not fp)
 		return NULL;
-	ToPtr tp (dynamic_cast< ToPtr >(fp));
+	ToPtr tp (dynamic_cast<ToPtr>(fp));
 	hopefully(tp, "cast_hopefully failed to dynamically cast between class types", cp);
 	return tp;
 }
@@ -168,7 +168,7 @@ ToPtr cast_hopefully(const From* fp, const codeplace& cp)
 {
 	if (not fp)
 		return NULL;
-	ToPtr tp (dynamic_cast< ToPtr >(fp));
+	ToPtr tp (dynamic_cast<ToPtr>(fp));
 	hopefully(tp, "cast_hopefully failed to dynamically cast between class types", cp);
 	return tp;
 }

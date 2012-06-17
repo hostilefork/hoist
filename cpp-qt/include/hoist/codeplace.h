@@ -24,8 +24,7 @@
 #include <QUuid>
 #include <QByteArray>
 #include <QTextStream>
-#include <QSharedPointer>
-#include <QCryptographicHash>
+#include <shared_ptrnclude <QCryptographicHash>
 #include <QCoreApplication>
 
 namespace hoist {

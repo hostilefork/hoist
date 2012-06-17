@@ -24,7 +24,7 @@ namespace hoist {
 // Currently this is quite similar to the callback, but I remove the boolean (since we know it must be true)
 // There may be additional processing to be done in the future.
 
-bool chronicle(const tracked< bool >& enabled, const QString& message, const codeplace& cp);
+bool chronicle(const tracked<bool>& enabled, const QString& message, const codeplace& cp);
 
 // The default chronicle handler is not very interesting, you can make your own
 
