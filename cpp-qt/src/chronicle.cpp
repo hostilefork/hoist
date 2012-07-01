@@ -38,7 +38,7 @@ chronicle_handler setChronicleHandlerAndReturnOldHandler(const chronicle_handler
 	return result;
 }
 
-bool chronicle(const tracked< bool >& enabled, const QString& message, const codeplace& cp)
+bool chronicle(const tracked<bool>& enabled, const QString& message, const codeplace& cp)
 {
 	if (enabled) {
 		if (globalChronicleHandler) {

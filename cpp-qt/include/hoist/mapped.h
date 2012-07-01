@@ -101,13 +101,13 @@ public:
 
 public:
 	mapped (const KeyType& key, const ValueType& value, manager& mgr, const codeplace& cp) :
-		tracked< ValueType > (value, cp),
+        tracked<ValueType> (value, cp),
 		mgr (mgr),
 		key (key)
 	{
 		mgr.mapLock.lockForWrite();
 		hopefully(not mgr.resultCache.contains(key), "mapped<> item already exists with key", cp);
-		mgr.resultCache.insert(key, *static_cast< tracked< ValueType >* >(this));
+        mgr.resultCache.insert(key, *static_cast< tracked<ValueType>* >(this));
 		mgr.mapLock.unlock();
 	}
 
@@ -128,8 +128,8 @@ public:
 	{
 		mgr.mapLock.lockForWrite();
 		hopefully(1 == mgr.resultCache.remove(key), cp);
-		tracked< ValueType >::assign(newValue, cp);
-		mgr.resultCache.insert(key, *static_cast< tracked< ValueType >* >(this));
+        tracked<ValueType>::assign(newValue, cp);
+        mgr.resultCache.insert(key, *static_cast< tracked<ValueType>* >(this));
 		mgr.mapLock.unlock();
 	}
 
