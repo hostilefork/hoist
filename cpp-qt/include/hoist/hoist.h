@@ -11,8 +11,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__HOIST_H
-#define HOIST__HOIST_H
+#ifndef HOIST_HOIST_H
+#define HOIST_HOIST_H
 
 #include "codeplace.h"
 #include "hopefully.h"

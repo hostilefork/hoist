@@ -13,8 +13,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__CHRONICLE_H
-#define HOIST__CHRONICLE_H
+#ifndef HOIST_CHRONICLE_H
+#define HOIST_CHRONICLE_H
 
 #include "codeplace.h"
 #include "tracked.h"

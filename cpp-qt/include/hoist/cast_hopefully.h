@@ -27,8 +27,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__HOPEFULLY_CAST_H
-#define HOIST__HOPEFULLY_CAST_H
+#ifndef HOIST_HOPEFULLY_CAST_H
+#define HOIST_HOPEFULLY_CAST_H
 
 #include "codeplace.h"
 #include "hopefully.h"

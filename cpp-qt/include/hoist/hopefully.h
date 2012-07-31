@@ -15,8 +15,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__HOPEFULLY_H
-#define HOIST__HOPEFULLY_H
+#ifndef HOIST_HOPEFULLY_H
+#define HOIST_HOPEFULLY_H
 
 #include "codeplace.h"
 
@@ -34,21 +34,21 @@ inline bool hopefullyNotReached(const codeplace& cp)
 	return hopefullyNotReached("Program Integrity Protection Triggered", cp);
 }
 
-inline bool hopefully(bool condition, const QString& message, const codeplace& cp)
+inline bool hopefully(bool const condition, const QString& message, const codeplace& cp)
 {
 	if (not condition)
 		hopefullyNotReached(message, cp);
 	return condition;
 }
 
-inline bool hopefully(bool condition, const char* message, const codeplace& cp)
+inline bool hopefully(bool const condition, const char* message, const codeplace& cp)
 {
 	if (not condition)
 		hopefullyNotReached(QString (message), cp);
 	return condition;
 }
 
-inline bool hopefully(bool condition, const codeplace& cp)
+inline bool hopefully(bool const condition, const codeplace& cp)
 {
 	if (not condition)
 		hopefullyNotReached(cp);

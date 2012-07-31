@@ -14,8 +14,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__CODEPLACE_H
-#define HOIST__CODEPLACE_H
+#ifndef HOIST_CODEPLACE_H
+#define HOIST_CODEPLACE_H
 
 // for what should be obvious reasons, codeplace cannot use "hopefully"
 // as its assertion service (hopefully is implemented in terms of codeplace!)

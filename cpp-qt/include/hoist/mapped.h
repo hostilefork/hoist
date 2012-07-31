@@ -17,8 +17,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__MAPPED_H
-#define HOIST__MAPPED_H
+#ifndef HOIST_MAPPED_H
+#define HOIST_MAPPED_H
 
 #include "codeplace.h"
 #include "hopefully.h"

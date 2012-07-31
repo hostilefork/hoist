@@ -18,8 +18,8 @@
 // See http://hostilefork.com/hoist/ for documentation.
 //
 
-#ifndef HOIST__TRACKED_H
-#define HOIST__TRACKED_H
+#ifndef HOIST_TRACKED_H
+#define HOIST_TRACKED_H
 
 #include "codeplace.h"
 #include "hopefully.h"
