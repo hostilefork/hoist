@@ -26,7 +26,7 @@ void onHopeFailedBasic(const QString& message, const codeplace& cp)
 	qDebug() << message << endl
 		<< "     output from: " << cp.toString() << endl;
 
-	qt_assert_x(message.toAscii(), cp.getUuid().toString().toAscii(), cp.getFilename().toAscii(), cp.getLine());
+    qt_assert_x(message.toLatin1(), cp.getUuid().toString().toLatin1(), cp.getFilename().toLatin1(), cp.getLine());
 
 	// hoist encourages "ship what you test" and the hopefully functions do
 	// not disappear in the release build.  Yet they return a value which can

@@ -158,7 +158,7 @@ public:
 
 		if (options & Permanent) {
 			if (options & UuidIsQString) {
-				return UuidFromBase64String((*uuidQString).toAscii());
+                return UuidFromBase64String((*uuidQString).toLatin1());
 			}
 			return UuidFromBase64String(QByteArray(uuidCString));
 		} else if (options & Hashed) {

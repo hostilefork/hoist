@@ -124,7 +124,7 @@ public:
 		return key;
 	}
 
-	/* virtual */ void assign(const ValueType& newValue, const codeplace& cp)
+    virtual void assign(const ValueType& newValue, const codeplace& cp) override
 	{
 		mgr.mapLock.lockForWrite();
 		hopefully(1 == mgr.resultCache.remove(key), cp);
