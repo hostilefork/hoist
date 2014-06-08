@@ -26,10 +26,10 @@
 
 namespace hoist {
 
-template<class TrackType> class tracked
+template<class T> class tracked
 {
 public:
-	tracked (const TrackType& value, const codeplace& cp) :
+    tracked (T const & value, const codeplace& cp) :
 		value (value),
 		constructLocation (cp),
 		lastAssignLocation (cp)
@@ -44,7 +44,7 @@ public:
 	// REVIEW: There are some extra bits in codeplace at the moment.
 	// might it be useful to have a "copy constructed" bit to document
 	// this situation?
-    tracked (const tracked<TrackType>& other) :
+    tracked (const tracked<T>& other) :
 		value (other.value),
 		constructLocation (other.constructLocation),
 		lastAssignLocation (other.lastAssignLocation)
@@ -56,11 +56,11 @@ public:
 
 public:
 	// Basic accessors, the value has a cast operator so it acts like what it's tracking
-	operator const TrackType&() const
+    operator const T&() const
 		{ return value; }
-	const TrackType& get() const
+    const T& get() const
 		{ return value; }
-	const TrackType& operator-> () const
+    const T& operator-> () const
 		{ return value; }
 
 	// Tracked types may eventually offer a longer value/location history
@@ -75,47 +75,47 @@ public:
 	// of costly set structure?  Variadic templates, perhaps?
 	//
 	// http://www.boostcon.com/community/wiki/show/Start/HandsOnCXX0x/VariadicTemplates/
-	bool hopefullyInSet(const TrackType& v1, const TrackType& v2, const TrackType& v3, const codeplace& cp) const
+    bool hopefullyInSet(const T& v1, const T& v2, const T& v3, const codeplace& cp) const
 	{
-		const TrackType* goodValues[3] = {&v1, &v2, &v3};
-		return hopefullyInSetCore(static_cast<const TrackType**>(goodValues), 3, cp);
+        const T* goodValues[3] = {&v1, &v2, &v3};
+        return hopefullyInSetCore(static_cast<const T**>(goodValues), 3, cp);
 	}
-	bool hopefullyInSet(const TrackType& v1, const TrackType& v2, const codeplace& cp) const
+    bool hopefullyInSet(const T& v1, const T& v2, const codeplace& cp) const
 	{
-		const TrackType* goodValues[2] = {&v1, &v2};
-		return hopefullyInSetCore(static_cast<const TrackType**>(goodValues), 2, cp);
+        const T* goodValues[2] = {&v1, &v2};
+        return hopefullyInSetCore(static_cast<const T**>(goodValues), 2, cp);
 	}
-	bool hopefullyEqualTo(const TrackType& value, const codeplace& cp) const
+    bool hopefullyEqualTo(const T& value, const codeplace& cp) const
 	{
-		const TrackType* goodValues[1] = {&value};
-		return hopefullyInSetCore(static_cast<const TrackType**>(goodValues), 1, cp);
+        const T* goodValues[1] = {&value};
+        return hopefullyInSetCore(static_cast<const T**>(goodValues), 1, cp);
 	}
 
 public:
-	bool hopefullyNotInSet(const TrackType& v1, const TrackType& v2, const TrackType& v3, const codeplace& cp) const
+    bool hopefullyNotInSet(const T& v1, const T& v2, const T& v3, const codeplace& cp) const
 	{
-		const TrackType* badValues[3] = {&v1, &v2, &v3};
-		return hopefullyNotInSetCore(static_cast<const TrackType**>(badValues), 3, cp);
+        const T* badValues[3] = {&v1, &v2, &v3};
+        return hopefullyNotInSetCore(static_cast<const T**>(badValues), 3, cp);
 	}
-	bool hopefullyNotInSet(const TrackType& v1, const TrackType& v2, const codeplace& cp) const
+    bool hopefullyNotInSet(const T& v1, const T& v2, const codeplace& cp) const
 	{
-		const TrackType* badValues[2] = {&v1, &v2};
-		return hopefullyNotInSetCore(static_cast<const TrackType**>(badValues), 2, cp);
+        const T* badValues[2] = {&v1, &v2};
+        return hopefullyNotInSetCore(static_cast<const T**>(badValues), 2, cp);
 	}
-	bool hopefullyNotEqualTo(const TrackType& value, const codeplace& cp) const
+    bool hopefullyNotEqualTo(const T& value, const codeplace& cp) const
 	{
-		const TrackType* badValues[1] = {&value};
-		return hopefullyNotInSetCore(static_cast<const TrackType**>(badValues), 1, cp);
+        const T* badValues[1] = {&value};
+        return hopefullyNotInSetCore(static_cast<const T**>(badValues), 1, cp);
 	}
 
 public:
 	// Operations for setting the value
-	virtual void assign(const TrackType& newValue, const codeplace& cp)
+    virtual void assign(T const & newValue, const codeplace& cp)
 	{
 		value = newValue;
 		lastAssignLocation = cp;
 	}
-	void guarantee(const TrackType& newValue, const codeplace& cp)
+    void guarantee(const T& newValue, const codeplace& cp)
 	{
 		if (value != newValue)
 			assign(newValue, cp);
@@ -131,20 +131,20 @@ public:
 	// that was passed in.  For the moment I'm making all hopefullys return
 	// true if their hope was met, and fase if it wasn't... but perhaps that
 	// should be thought about.
-	bool hopefullyAlter(const TrackType& newValue, const codeplace& cp)
+    bool hopefullyAlter(T const & newValue, const codeplace& cp)
 	{
 		bool result (hopefullyNotEqualTo(newValue, cp));
 		assign(newValue, cp);
 		return result;
 	}
-	bool hopefullyTransition(const TrackType& oldValue, const TrackType& newValue, const codeplace& cp) {
+    bool hopefullyTransition(T const & oldValue, T const & newValue, const codeplace& cp) {
 		bool result (hopefullyEqualTo(oldValue, cp));
 		assign(newValue, cp);
 		return result;
 	}
 
 protected:
-	bool hopefullyInSetCore(const TrackType** goodValues, const size_t& numGoodValues, const codeplace& cp) const
+    bool hopefullyInSetCore(const T** goodValues, const size_t& numGoodValues, const codeplace& cp) const
 	{
 		hopefully(numGoodValues != 0, HERE);
 
@@ -173,7 +173,7 @@ protected:
 		return false;
 	}
 
-	bool hopefullyNotInSetCore(const TrackType** badValues, const size_t& numBadValues, const codeplace& cp) const
+    bool hopefullyNotInSetCore(const T** badValues, const size_t& numBadValues, const codeplace& cp) const
 	{
 		hopefully(numBadValues != 0, HERE);
 
@@ -205,7 +205,7 @@ protected:
 	}
 
 private:
-	TrackType value;
+    T value;
 	codeplace constructLocation;
 	codeplace lastAssignLocation;
 };

@@ -28,7 +28,7 @@
 
 namespace hoist {
 
-template<class StackType> class stacked : public tracked<StackType>
+template<class T> class stacked : public tracked<T>
 {
 public:
 	class manager
@@ -49,11 +49,11 @@ public:
 		// stack is empty and then take action on that, you probably
 		// need to capture the entire stack because otherwise it might
 		// change between when you asked and when you make the next call
-		tracked<StackType> getTopHopefully(const codeplace& cp) const
+        tracked<T> getTopHopefully(const codeplace& cp) const
 		{
 			QThread* thread (QThread::currentThread());
 			mapLock.lockForRead();
-            QList< tracked<StackType> > stack (map[thread]);
+            QList< tracked<T> > stack (map[thread]);
 			if (stack.empty()) {
 				mapLock.unlock();
 				hopefullyNotReached("Attempted to call stacked<>::manager::getTopHopefully() when no stacked<> type has been pushed", cp);
@@ -63,10 +63,10 @@ public:
 				// This is bogus code just to make the compiler be quiet about the
 				// lack of return value without forcing tracked< > to be default
 				// constructible.
-                typename QList< tracked<StackType> >::iterator i;
+                typename QList< tracked<T> >::iterator i;
 				return *i;
 			} else {
-                tracked<StackType> result (stack.first());
+                tracked<T> result (stack.first());
 				mapLock.unlock();
 				return result;
 			}
@@ -76,39 +76,39 @@ public:
 		// is built upon QVector, and that requires the items you put in it to be default
 		// constructible.  That is an unacceptable requirement to put onto tracked<>
 		// so you should simply treat the front of the list as the "top" of the stack.
-        QList< tracked<StackType> > getStack() const
+        QList< tracked<T> > getStack() const
 		{
 			QThread* thread (QThread::currentThread());
 			mapLock.lockForRead();
-            QList< tracked<StackType> > stack (map[thread]);
+            QList< tracked<T> > stack (map[thread]);
 			mapLock.unlock();
 			return stack;
 		}
 
 	private:
 		mutable QReadWriteLock mapLock;
-        QMap<QThread*, QList< tracked<StackType> > > map;
+        QMap<QThread*, QList< tracked<T> > > map;
 		friend class stacked;
 	};
 
 public:
-	stacked (StackType value, manager& mgr, const codeplace& cp) :
-        tracked<StackType> (value, cp),
+    stacked (T value, manager& mgr, const codeplace& cp) :
+        tracked<T> (value, cp),
 		mgr (mgr)
 	{
 		QThread* thread (QThread::currentThread());
 		mgr.mapLock.lockForWrite();
-        QList< tracked<StackType> > stack (mgr.map[thread]);
-        stack.push_front(*static_cast< tracked<StackType>* >(this));
+        QList< tracked<T> > stack (mgr.map[thread]);
+        stack.push_front(*static_cast< tracked<T>* >(this));
 		mgr.map[thread] = stack;
 		mgr.mapLock.unlock();
 	}
 
-	virtual ~stacked()
+    ~stacked() override
 	{
 		QThread* thread (QThread::currentThread());
 		mgr.mapLock.lockForWrite();
-        QList< tracked<StackType> > stack (mgr.map[thread]);
+        QList< tracked<T> > stack (mgr.map[thread]);
 		if (stack.front().get() != this->get()) {
 			QString message;
 			QTextStream ts (&message);
