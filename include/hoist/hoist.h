@@ -1,9 +1,9 @@
 //
 // hoist.h - A single include which does a #include for all the hoist
-//	library classes, provided as a convenience.  You may also
-//	include them individually, though some depend on others.
+//  library classes, provided as a convenience.  You may also
+//  include them individually, though some depend on others.
 //
-//              Copyright (c) 2009 HostileFork.com
+//          Copyright (c) 2009-2014 HostileFork.com
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //           http://www.boost.org/LICENSE_1_0.txt)
