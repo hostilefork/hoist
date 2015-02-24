@@ -36,10 +36,41 @@ QUuid UuidFromBase64String (QByteArray const & str);
 QUuid UuidFrom128Bits (QByteArray const & bytes);
 
 
-// TODO: filenames in a string table to avoid redundant QString allocations?
-// TODO: figure out compilation on files with unicode __FILE__ ?
-class codeplace
+class codeplace final
 {
+template <class> friend struct ::std::hash;
+
+public: // switch to private and declare operators as friends...
+    enum class Options {
+        None = 0,
+
+        // is either "permanent" or "hashed", can't actually be both
+
+        Hashed = 1 << 0,
+        Permanent = 1 << 1,
+
+        // codeplace is optimized to avoid making a lot of QStrings out of
+        // immutable string literals that you're already paying for in the
+        // compiler's constant pool. The only time it actually uses QStrings
+        // is if you pass in a UUID or filename string that needs to have its
+        // own memory management.
+
+        FilenameIsQString = 1 << 2,
+        UuidIsQString = 1 << 3
+
+        // Note that as a general rule... if you enable string pooling a.k.a.
+        // string interning you can save memory, e.g. when 100 asserts in the
+        // same file are all using __FILE__ and thus producing a copy of the
+        // literal "foo.cpp" you only pay for the memory to hold that once.
+        //
+        // Enabled by default in gcc.
+        //
+        //    http://en.wikipedia.org/wiki/String_interning
+        //    http://msdn.microsoft.com/en-us/library/s0s0asdt(VS.80).aspx
+        //    http://stackoverflow.com/questions/11399682/
+    };
+
+
 public:
     // REVIEW: These functions used to live inside a statically allocated
     // "manager" object.  At one time this manager allowed one to look
@@ -49,231 +80,68 @@ public:
     // usage pattern of global char const * instead of QString emerged
     // as dominant, so the manager has been removed for now.
 
-    static codeplace makeHere (char const * filename, long const & line) {
-        return codeplace (filename, line);
-    }
+    static codeplace makeHere (char const * filename, long const & line);
 
-    static codeplace makeHere (QString const & filename, long const & line) {
-        return codeplace (filename, line);
-    }
+    static codeplace makeHere (QString const & filename, long const & line);
 
     static codeplace makePlace (
         char const * filename,
         long const & line,
         char const * uuidString
-    ) {
-        return codeplace (filename, line, uuidString);
-    }
+    );
 
     static codeplace makePlace (
         QString const & filename,
         long const & line,
         QString const & uuidString
-    ) {
-        return codeplace (filename, line, uuidString);
-    }
+    );
 
     static codeplace makeThere (
         QString const & filename,
         long const & line,
         codeplace const & cp
-    ) {
-        QString uuidString = Base64StringFromUuid(cp.getUuid());
-        return codeplace (filename, line, uuidString);
-    }
+    );
 
     static codeplace makeYonder (
         QString const & yonderString,
         codeplace const & cp
-    ) {
-        // faster than Md5 and we're not worried about security/attacks
-        // NOTE: Qt hash function is thread-safe
-        QByteArray bytes = QCryptographicHash::hash(
-            yonderString.toUtf8(), QCryptographicHash::Md4
-        );
-
-        // TODO: Fix this to comply with UUID format rules, random or hashed
-        // bits will contain lies in the bits indicating what protocol the
-        // UUID was generated in accordance with (e.g. a pseudo-UUID)
-        QString uuidString = Base64StringFromUuid(UuidFrom128Bits(bytes));
-
-        return codeplace (cp.getFilename(), cp.getLine(), uuidString);
-    }
+    );
 
 
 public:
     // I do not like this very much but default constructible is needed for
     // several purposes, including qRegisterMetaType.
-    codeplace () :
-        _options (NullCodeplace),
-        _filenameEither (nullptr),
-        _line (-1),
-        _uuidEither (nullptr)
-    {
-    }
+    codeplace ();
 
-    // copy constructor is public
-    codeplace (codeplace const & other) :
-        _options (NullCodeplace),
-        _filenameEither (nullptr),
-        _line (other._line),
-        _uuidEither (nullptr)
-    {
-        transitionFromNull(other);
-    }
+    // copy constructor is also public
+    codeplace (codeplace const & other);
 
-    virtual ~codeplace () {
-        transitionToNull();
-    }
+    // destructor has to be public
+    ~codeplace ();
 
 
 public:
-    codeplace & operator= (codeplace const & rhs)
-    {
-        // protect against self-assignment
-        if (&rhs != this) {
-            // free any strings we may have responsibility to free
-            transitionToNull();
+    codeplace & operator= (codeplace const & rhs);
 
-            // copy and potentially allocate new QStrings
-            transitionFromNull(rhs);
-        }
-        return *this;
-    }
+    int operator== (codeplace const & rhs) const;
 
-    int operator== (codeplace const & rhs) const
-    {
-        // Should we allow comparisons of null codeplaces?
-        /* assert(options != NullCodeplace); */
+    QString getFilename () const;
 
-        // TODO: current semantics is uuid equality, is that sensible?
-        // also what to do about null uuids?
-        return this->getUuid() == rhs.getUuid();
-    }
+    long getLine () const;
 
-    QString getFilename () const {
-        assert(_options != NullCodeplace);
+    QUuid getUuid () const;
 
-        // TODO: behind the scenes mutation into using a QString?
-        // would need to be thread safe if so
-        if (_options & FilenameIsQString) {
-            return *_filenameQString;
-        }
-        return QString(_filenameCString);
-    }
+    operator QUuid () const;
 
-    long getLine () const {
-        assert(_options != NullCodeplace);
-        return _line;
-    }
+    QString toString () const;
 
-    QUuid getUuid () const {
-        assert(_options != NullCodeplace);
-
-        if (_options & Permanent) {
-            if (_options & UuidIsQString) {
-                return UuidFromBase64String((*_uuidQString).toLatin1());
-            }
-            return UuidFromBase64String(QByteArray(_uuidCString));
-        } else if (_options & Hashed) {
-            // TODO: Decide what string format will hash best
-            QString fileAndLine;
-            if (_options & FilenameIsQString)
-                fileAndLine = QString::number(_line, 10) + *_filenameQString;
-            else
-                fileAndLine = QString::number(_line, 10) + _filenameCString;
-
-            QByteArray bytes = QCryptographicHash::hash(
-                fileAndLine.toUtf8(), QCryptographicHash::Md4
-            );
-
-            return UuidFrom128Bits(bytes);
-        } else {
-            // null uuid for null codeplace... should be caught above
-            return QUuid ();
-        }
-    }
-
-    operator QUuid () const {
-        return getUuid();
-    }
-
-    QString toString () const {
-        QString result;
-        QTextStream ts (&result);
-        ts << "File: '" << getFilename() << "' - " << " Line # " << getLine();
-        return result;
-    }
-
-    bool isPermanent () const {
-        return (_options & Permanent);
-    }
+    bool isPermanent () const;
 
 
 private:
-    void transitionToNull () {
-        if (_options & FilenameIsQString) {
-            delete _filenameQString;
-            _filenameQString = nullptr;
-        }
+    void transitionToNull ();
 
-        if ((_options & Permanent) and (_options & UuidIsQString)) {
-            delete _uuidQString;
-            _uuidQString = nullptr;
-        }
-    }
-
-    void transitionFromNull (codeplace const & other) {
-        _options = other._options;
-
-        if (other._options & NullCodeplace)
-            return;
-
-        if (other._options & FilenameIsQString) {
-            _filenameQString = new QString (*other._filenameQString);
-        } else {
-            _filenameCString = other._filenameCString;
-        }
-
-        if (other._options & Permanent) {
-            if (other._options & UuidIsQString) {
-                _uuidQString = new QString (*other._uuidQString);
-            } else {
-                _uuidCString = other._uuidCString;
-            }
-        }
-
-        _line = other._line;
-    }
-
-
-public:
-    enum Option {
-         // I don't like the fact that we need default constructible
-         // for qRegisterMetaType
-        NullCodeplace = 0x0,
-
-        // is either "permanent" or "hashed", can't actually be both
-        Hashed = 0x1,
-        Permanent = 0x2,
-
-        // codeplace is optimized to avoid making a lot of QStrings out of
-        // immutable string literals that you're already paying for in the
-        // compiler's constant pool. The only time it actually uses QStrings
-        // is if you pass in a UUID or filename string that needs to have its
-        // own memory management.
-        FilenameIsQString = 0x4,
-        UuidIsQString = 0x8
-
-        // Note that as a general rule... if you enable string pooling a.k.a.
-        // string interning you can save memory, e.g. when 100 asserts in the
-        // same file are all using __FILE__ and thus producing a copy of the
-        // literal "foo.cpp" you only pay for the memory to hold that once.
-        //
-        //    http://en.wikipedia.org/wiki/String_interning
-        //    http://msdn.microsoft.com/en-us/library/s0s0asdt(VS.80).aspx
-    };
-    Q_DECLARE_FLAGS(Options, Option)
+    void transitionFromNull (codeplace const & other);
 
 
 protected:
@@ -281,41 +149,17 @@ protected:
         QString const & filename,
         long const & line,
         QString const & uuidString
-    ) :
-        _options (Permanent | FilenameIsQString | UuidIsQString),
-        _filenameQString (new QString (filename)),
-        _line (line),
-        _uuidQString (new QString (uuidString))
-    {
-    }
+    );
 
     codeplace (
         char const * filename,
         long const & line,
         char const * uuidString
-    ) :
-        _options (Permanent),
-        _filenameCString (filename),
-        _line (line),
-        _uuidCString (uuidString)
-    {
-    }
+    );
 
-    codeplace (QString const & filename, long const & line) :
-        _options (Hashed | FilenameIsQString),
-        _filenameQString (new QString (filename)),
-        _line (line),
-        _uuidEither (nullptr)
-    {
-    }
+    codeplace (QString const & filename, long const & line);
 
-    codeplace (char const * filename, long const & line) :
-        _options (Hashed),
-        _filenameCString (filename),
-        _line (line),
-        _uuidEither (nullptr)
-    {
-    }
+    codeplace (char const * filename, long const & line);
 
 private:
     Options _options;
@@ -344,13 +188,69 @@ private:
     };
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(codeplace::Options)
 
-// we moc this file, though whether there are any QObjects or not may vary
-// this dummy object suppresses the warning "No relevant classes found" w/moc
-class CODEPLACE_no_moc_warning : public QObject { Q_OBJECT };
+
+// C++11 type-safe bitflag operations compatible with "enum class"
+// (Qt's QFlags will not work with this feature.)
+//
+//    http://stackoverflow.com/a/4227264/211160
+//    http://stackoverflow.com/a/8357462/211160
+//
+// Must test for == or != to Options::None as bool/int conversion is not
+// possible for an enum class.
+
+inline codeplace::Options operator| (
+    codeplace::Options const & a,
+    codeplace::Options const & b
+) {
+    using Options = codeplace::Options;
+    typedef std::underlying_type<Options>::type ut;
+
+    return static_cast<Options>(
+        static_cast<ut>(a) | static_cast<ut>(b)
+    );
+}
+
+inline codeplace::Options operator& (
+    codeplace::Options const & a,
+    codeplace::Options const & b
+) {
+    using Options = codeplace::Options;
+    typedef std::underlying_type<Options>::type ut;
+
+    return static_cast<Options>(
+        static_cast<ut>(a) & static_cast<ut>(b)
+    );
+}
+
 
 } // end namespace hoist
+
+
+
+namespace std {
+
+    // Need for std::unordered_set and unordered_map to work on codeplace
+    // http://stackoverflow.com/questions/8157937/
+
+    template <>
+    struct hash<hoist::codeplace>
+    {
+        size_t operator()(
+            hoist::codeplace const & cp
+        ) const
+        {
+            using Options = hoist::codeplace::Options;
+
+            if (cp._options == Options::None)
+                return 0;
+
+            return qHash(cp.getUuid());
+        }
+    };
+
+}
+
 
 
 //
