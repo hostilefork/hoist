@@ -16,65 +16,50 @@
 
 namespace hoist {
 
-chronicle_handler globalChronicleHandler = nullptr;
 
-
-void onChronicleBasic(
-    codeplace const & cpEnableWhereConstructed,
-    codeplace const & cpEnableWhereLastAssigned,
-    QString const & message,
+QDebug chronicleCore (
+    codeplace const & whereEnableConstructed,
+    codeplace const & whereEnableLastAssigned,
     codeplace const & cpOutput
 ) {
-    Q_UNUSED(cpEnableWhereConstructed);
+    Q_UNUSED(whereEnableConstructed);
 
-    qDebug() << message << endl
-        << "     output from: " << cpOutput.toString() << endl
-        << "     enabled by: " << cpEnableWhereLastAssigned.toString() << endl;
+    return qDebug()
+        << "debug output from:" << cpOutput.toString() << endl
+        << "output enabled by:" << whereEnableLastAssigned.toString() << endl;
 }
 
 
-chronicle_handler setChronicleHandlerAndReturnOldHandler (
-    chronicle_handler const & newHandler)
-{
-    chronicle_handler result
-        = globalChronicleHandler
-        ? globalChronicleHandler
-        : &onChronicleBasic;
-
-    if (hopefully(newHandler, "Null passed to setChronicleHandler", HERE)) {
-        if (newHandler == &onChronicleBasic) {
-            globalChronicleHandler = nullptr;
-        } else {
-            globalChronicleHandler = newHandler;
-        }
-    }
-    return result;
-}
-
-
-bool chronicle(
+bool chronicle (
     tracked<bool> const & enabled,
     QString const & message,
     codeplace const & cp
 ) {
     if (enabled) {
-        if (globalChronicleHandler) {
-            (*globalChronicleHandler)(
-                enabled.whereConstructed(),
-                enabled.whereLastAssigned(),
-                message,
-                cp
-            );
-        } else {
-            onChronicleBasic(
-                enabled.whereConstructed(),
-                enabled.whereLastAssigned(),
-                message,
-                cp
-            );
-        }
+        chronicleCore(
+            enabled.whereConstructed(),
+            enabled.whereLastAssigned(),
+            cp
+        ) << message << endl;
     }
     return enabled;
 }
+
+
+bool chronicle (
+    tracked<bool> const & enabled,
+    chronicle_function function,
+    codeplace const & cp
+) {
+    if (enabled) {
+        function(chronicleCore(
+            enabled.whereConstructed(),
+            enabled.whereLastAssigned(),
+            cp
+        ));
+    }
+    return enabled;
+}
+
 
 } // end namespace hoist

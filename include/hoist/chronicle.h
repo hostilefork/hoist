@@ -16,14 +16,14 @@
 #ifndef HOIST_CHRONICLE_H
 #define HOIST_CHRONICLE_H
 
+#include <functional>
+
 #include "codeplace.h"
 #include "tracked.h"
 
 namespace hoist {
 
-// Currently this is quite similar to the callback, but I remove the boolean
-// (since we know it must be true).  There may be additional processing to
-// be done in the future.
+typedef std::function<void(QDebug)> chronicle_function;
 
 bool chronicle (
     tracked<bool> const & enabled,
@@ -31,27 +31,11 @@ bool chronicle (
     codeplace const & cp
 );
 
-
-// The default chronicle handler is not very interesting, you can make your own
-
-typedef void (* chronicle_handler)(
-    codeplace const & cpEnableWhereConstructed,
-    codeplace const & cpEnableWhereLastAssigned,
-    QString const & message,
-    codeplace const & cpOutput
+bool chronicle (
+    tracked<bool> const & enabled,
+    chronicle_function function,
+    codeplace const & cp
 );
-
-chronicle_handler setChronicleHandlerAndReturnOldHandler (
-    chronicle_handler const & newHandler
-);
-
-inline void setChronicleHandler (chronicle_handler const & newHandler) {
-    static_cast<void>(setChronicleHandlerAndReturnOldHandler(newHandler));
-}
-
-// we moc this file, though whether there are any QObjects or not may vary
-// this dummy object suppresses the warning "No relevant classes found" w/moc
-class CHRONICLE_no_moc_warning : public QObject { Q_OBJECT };
 
 } // end namespace hoist
 
