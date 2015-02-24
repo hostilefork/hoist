@@ -64,6 +64,33 @@ inline bool hopefully (bool const condition, codeplace const & cp) {
 }
 
 
+// hopefullyAlter and hopefullyTransition were inspired by tracked<T>, but
+// were useful for general assignments also.
+
+template <typename T, typename U>
+inline bool hopefullyAlter (
+    T & variable,
+    U const & value,
+    codeplace const & cp
+) {
+    bool result = hopefully(variable != value, cp);
+    variable = value;
+    return result;
+}
+
+template <typename T, typename U, typename V>
+inline bool hopefullyTransition (
+    T & variable,
+    U const & oldValue,
+    V const & newValue,
+    codeplace const & cp
+) {
+    bool result = hopefully(variable == oldValue, cp);
+    variable = newValue;
+    return result;
+}
+
+
 // default hope failed handler is not very interesting, you can make your own
 
 typedef void (* hope_failed_handler) (
